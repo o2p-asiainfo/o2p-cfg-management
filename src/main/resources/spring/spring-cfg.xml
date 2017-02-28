@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<aop:aspectj-autoproxy proxy-target-class="true"/>
+	<mvc:annotation-driven>
+		<mvc:message-converters register-defaults="true">
+			<bean class="org.springframework.http.converter.StringHttpMessageConverter">
+				<property name="supportedMediaTypes" value="text/plain;charset=UTF-8" />
+			</bean>
+		</mvc:message-converters>
+	</mvc:annotation-driven>
+	<context:component-scan base-package="com.asiainfo.integration.o2p.cfg" />
+	
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">  
+	</bean>
+
+	<bean id="propertyConfigurer"
+		class="com.ailk.eaap.o2p.common.spring.config.EncryptPropertyPlaceholderConfigurer">
+		<property name="ignoreUnresolvablePlaceholders" value="true" />
+		<property name="locations">
+			<list>
+				<value>classpath:o2p_cfg.properties</value>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="common-dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+		destroy-method="close">
+		<property name="driverClass">
+			<value>${o2pCommon.jdbcDriver}</value>
+		</property>
+		<property name="jdbcUrl">
+			<value>${o2pCommon.database}</value>
+		</property>
+		<property name="user">
+			<value>${o2pCommon.user}</value>
+		</property>
+		<property name="password">
+			<value>${o2pCommon.password}</value>
+		</property>
+		<property name="maxPoolSize">
+			<value>${o2pCommon.maxIdle}</value>
+		</property>
+		<property name="minPoolSize">
+			<value>${o2pCommon.minIdle}</value>
+		</property>
+		<property name="initialPoolSize">
+			<value>${o2pCommon.initialSize}</value>
+		</property>
+		<property name="acquireRetryDelay">
+			<value>${o2pCommon.maxWait}</value>
+		</property>
+		<property name="breakAfterAcquireFailure">
+			<value>${o2pCommon.breakAfterAcquireFailure}</value>
+		</property>
+		<property name="testConnectionOnCheckout">
+			<value>${o2pCommon.testConnectionOnCheckout}</value>
+		</property>
+		<property name="testConnectionOnCheckin">
+			<value>${o2pCommon.testConnectionOnCheckin}</value>
+		</property>
+		<property name="idleConnectionTestPeriod">
+			<value>${o2pCommon.idleConnectionTestPeriod}</value>
+		</property>
+		<property name="acquireRetryAttempts">
+			<value>${o2pCommon.acquireRetryAttempts}</value>
+		</property>
+	</bean>
+
+	<bean id="configurationSqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="common-dataSource" />
+		<property name="mapperLocations">
+			<list>
+				<value>
+					classpath:mybatis/model/cfg-sqlmap.xml
+				</value>
+				<value>
+					classpath:mybatis/model/operator-log-sqlmap.xml
+				</value>
+			</list>
+		</property>
+		<property name="databaseIdProvider" ref="databaseIdProvider"></property>
+		<property name="typeAliasesPackage" value="com.asiainfo.integration.o2p.cfg.util"></property>
+	</bean>
+
+	<bean id="databaseIdProvider" class="org.apache.ibatis.mapping.VendorDatabaseIdProvider">
+		<property name="properties" ref="vendorProperties"></property>
+	</bean>
+
+	<bean id="vendorProperties"
+		class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="properties">
+			<props>
+				<prop key="Oracle">oracle</prop>
+				<prop key="MySQL">mysql</prop>
+				<prop key="HSQL Database Engine">hsqldb</prop>
+			</props>
+		</property>
+	</bean>
+
+	<!-- 配置Spring的事务管理器 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="common-dataSource" />
+	</bean>
+
+	<!-- enable transaction annotation support -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+
+	<!-- 拦截器方式配置事物 <tx:advice id="transactionAdvice" transaction-manager="transactionManager"> 
+		<tx:attributes> <tx:method name="add*" propagation="REQUIRED" /> <tx:method 
+		name="append*" propagation="REQUIRED" /> <tx:method name="insert*" propagation="REQUIRED" 
+		/> <tx:method name="save*" propagation="REQUIRED" /> <tx:method name="update*" 
+		propagation="REQUIRED" /> <tx:method name="modify*" propagation="REQUIRED" 
+		/> <tx:method name="edit*" propagation="REQUIRED" /> <tx:method name="delete*" 
+		propagation="REQUIRED" /> <tx:method name="remove*" propagation="REQUIRED" 
+		/> <tx:method name="repair" propagation="REQUIRED" /> <tx:method name="delAndRepair" 
+		propagation="REQUIRED" /> <tx:method name="get*" propagation="SUPPORTS" /> 
+		<tx:method name="find*" propagation="SUPPORTS" /> <tx:method name="load*" 
+		propagation="SUPPORTS" /> <tx:method name="search*" propagation="SUPPORTS" 
+		/> <tx:method name="datagrid*" propagation="SUPPORTS" /> <tx:method name="*" 
+		propagation="SUPPORTS" /> </tx:attributes> </tx:advice> <aop:config> <aop:pointcut 
+		id="transactionPointcut" expression="execution(* com.asiainfo.integration.o2p.cfg..*Impl.*(..))" 
+		/> <aop:advisor pointcut-ref="transactionPointcut" advice-ref="transactionAdvice" 
+		/> </aop:config> -->
+
+	<bean id="configurationSqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0"
+			ref="configurationSqlSessionFactory" />
+	</bean>
+
+	<bean id="configurationManagementDAO"
+		class="com.asiainfo.integration.o2p.cfg.dao.ConfigurationManagementDAO">
+		<property name="sqlSessionTemplate">
+			<ref bean="configurationSqlSession" />
+		</property>
+	</bean>
+
+	<bean
+		class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+		<property name="order" value="1" />
+		<property name="favorParameter" value="false" />
+		<property name="ignoreAcceptHeader" value="true" />
+		<property name="defaultContentType" value="text/html" />
+		<property name="mediaTypes">
+			<map>
+				<entry key="json" value="application/json" />
+				<!-- <entry key="xml" value="application/xml" /> -->
+			</map>
+		</property>
+		<property name="viewResolvers">
+			<list>
+				<bean class="org.springframework.web.servlet.view.BeanNameViewResolver" />
+				<bean
+					class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+					<property name="prefix" value="/WEB-INF/views/" />
+					<property name="suffix" value=".jsp" />
+				</bean>
+			</list>
+		</property>
+		<property name="defaultViews">
+			<list>
+				<bean id="jsonView"
+					class="org.springframework.web.servlet.view.json.MappingJackson2JsonView" />
+				<!-- <bean id="xmlView" -->
+				<!-- class="org.springframework.web.servlet.view.xml.MarshallingView"/> -->
+			</list>
+		</property>
+
+		<!-- <mvc:interceptors> -->
+		<!-- <bean class="com.asiainfo.eaap.integration.spring.aop.annotations.AuthInterceptor"/> -->
+		<!-- </mvc:interceptors> -->
+		<!-- <bean id="authInterceptor" class="com.asiainfo.eaap.integration.spring.aop.annotations.AuthInterceptor"/> -->
+	</bean>
+</beans>

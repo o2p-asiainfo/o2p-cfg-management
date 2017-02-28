@@ -1,0 +1,41 @@
+[{
+    "id": 1,
+    "text": "Root node 1",
+    "state" : {"opened" : true },
+    "children": [{
+        "id": 2,
+        "text": "Child node 2",
+        "type": "leaf"
+    }, {
+        "id": 3,
+        "text": "Child node 3",
+        "state" : {"opened" : true },
+        "children": [{
+            "id": 4,
+            "text": "Child node 4",
+            "state" : {"opened" : true },
+            "children": [{
+                "id": 5,
+                "text": "Child node 5",
+                "type": "leaf"
+            }, {
+                "id": 6,
+                "text": "Child node 6",
+                "state" : {"opened" : true },
+                "children": [{
+                    "id": 7,
+                    "type": "leaf",
+                    "text": "Child node 7"
+                }, {
+                    "id": 8,
+                    "type": "leaf",
+                    "text": "Child node 8"
+                }]
+            }]
+        }, {
+            "id": 9,
+            "type": "leaf",
+            "text": "Child node 9"
+        }]
+    }]
+}]

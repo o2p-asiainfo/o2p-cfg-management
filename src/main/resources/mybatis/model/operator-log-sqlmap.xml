@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="operatorLog">
+	<insert id="insertOperateLog" parameterType="com.ailk.eaap.o2p.sqllog.model.OperateLog">
+		<selectKey resultType="long" keyProperty="logId" order="BEFORE">
+			SELECT nextval('SEQ_OPERATE_LOG');
+		</selectKey>
+		insert into operate_log
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="logId != null">LOG_ID,</if>
+			<if test="userName != null">USER_NAME,</if>
+			<if test="userIp != null">USER_IP,</if>
+			<if test="tableName != null">TABLE_NAME,</if>
+			<if test="optType != null">OPT_TYPE,</if>
+			<if test="execClass != null">EXEC_CLASS,</if>
+			<if test="execMethod != null">EXEC_METHOD,</if>
+			<if test="sqlLog != null">SQL_LOG,</if>
+			<if test="createDate != null">CREATE_DATE,</if>
+		</trim>
+		<trim prefix=" values (" suffix=")" suffixOverrides="," >
+			<if test="logId != null">#{logId},</if>
+			<if test="userName != null">#{userName},</if>
+			<if test="userIp != null">#{userIp},</if>
+			<if test="tableName != null">#{tableName},</if>
+			<if test="optType != null">#{optType},</if>
+			<if test="execClass != null">#{execClass},</if>
+			<if test="execMethod != null">#{execMethod},</if>
+			<if test="sqlLog != null">#{sqlLog},</if>
+			<if test="createDate != null">#{createDate},</if>
+		</trim>
+	</insert>
+
+	<insert id="insertOperateLogData" parameterType="com.ailk.eaap.o2p.sqllog.model.OperateLogData">
+		<selectKey resultType="long" keyProperty="id" order="BEFORE">
+			SELECT nextval('SEQ_OPERATE_LOG_DATA');
+		</selectKey>
+		insert into operate_log_data
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">ID,</if>
+			<if test="logId != null">LOG_ID,</if>
+			<if test="dataKey != null">DATA_KEY,</if>
+			<if test="dataLog != null">DATA_LOG,</if>
+			<if test="createDate != null">CREATE_DATE,</if>
+		</trim>
+		<trim prefix=" values (" suffix=")" suffixOverrides="," >
+			<if test="id != null">#{id},</if>
+			<if test="logId != null">#{logId},</if>
+			<if test="dataKey != null">#{dataKey},</if>
+			<if test="dataLog != null">#{dataLog},</if>
+			<if test="createDate != null">#{createDate},</if>
+		</trim>
+	</insert>
+</mapper>

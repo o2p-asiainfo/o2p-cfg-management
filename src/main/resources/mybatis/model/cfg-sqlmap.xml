@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="configurationManagement">
+   
+ 	<resultMap type="com.asiainfo.integration.o2p.cfg.dto.CfgProperties" id="cfgPropertiesMap">
+ 		  <result property="id" column="ID"  jdbcType="DECIMAL"/>
+ 	      <result property="key" column="PRO_KEY"    jdbcType="VARCHAR"/>
+ 	      <result property="proDataType" column="pro_data_type"    jdbcType="VARCHAR"/>
+ 	      <result property="value" column="pro_value"    jdbcType="VARCHAR"/>
+ 	      <result property="proValueBuffer" column="pro_value_buffer"   typeHandler="com.asiainfo.integration.o2p.cfg.util.BlobTypeHandler"/>
+ 	      <result property="proType" column="pro_type"    jdbcType="DECIMAL"/>
+ 	      <result property="lock" column="pro_encrypt"    jdbcType="DECIMAL"/>
+ 	      <result property="moduleName" column="module_name"  jdbcType="VARCHAR"/>
+ 	      <result property="group" column="group_name"    jdbcType="VARCHAR"/>
+ 	      <result property="groupDesc" column="group_desc"    jdbcType="VARCHAR"/>
+ 	      <result property="effectZone" column="effect_zone"    jdbcType="VARCHAR"/>
+ 	      <result property="createDt" column="create_dt" jdbcType="DATE"/>
+ 	      <result property="modifyDt" column="modify_dt" jdbcType="DATE"/>
+ 	      <result property="state" column="syn_status"    jdbcType="VARCHAR"/>
+ 	      <result property="proConstraint" column="pro_constraint"    jdbcType="VARCHAR"/>
+ 	      <result property="dirId" column="dir_id"    jdbcType="DECIMAL"/>
+ 	      <result property="description" column="description"    jdbcType="VARCHAR"/>
+   </resultMap>
+   
+   <resultMap type="com.asiainfo.integration.o2p.cfg.dto.ZkPath" id="zkPathMap">
+ 	 	 <result property="id" column="dir_id" jdbcType="DECIMAL"/>
+ 	 	 <result property="pId" column="fa_dir_id" jdbcType="DECIMAL"/>
+ 	 	 <result property="text" column="dir_name" jdbcType="VARCHAR"/>
+ 	 	 <result property="dirType" column="dir_type" jdbcType="VARCHAR"/>
+ 	 	 <result property="dirCreateTime" column="dir_create_time" jdbcType="DATE"/>
+ 	 	 <result property="dirState" column="dir_state" jdbcType="VARCHAR"/>
+ 	 	 <result property="dirLastestTime" column="dir_lastest_time" jdbcType="DATE"/>
+ 	 	 <result property="state.dirType" column="dir_type" jdbcType="CHAR"/>
+ 	 	 <collection property="children" column="dir_id" select="selectChildrenPath"/>
+ 	</resultMap>
+ 	
+ 	<resultMap type="com.asiainfo.integration.o2p.cfg.dto.ZkPath" id="zkPathSinMap">
+ 	 	 <result property="id" column="dir_id" jdbcType="DECIMAL"/>
+ 	 	 <result property="pId" column="fa_dir_id" jdbcType="DECIMAL"/>
+ 	 	 <result property="text" column="dir_name" jdbcType="VARCHAR"/>
+ 	 	 <result property="dirType" column="dir_type" jdbcType="VARCHAR"/>
+ 	 	 <result property="dirCreateTime" column="dir_create_time" jdbcType="DATE"/>
+ 	 	 <result property="dirState" column="dir_state" jdbcType="VARCHAR"/>
+ 	 	 <result property="dirLastestTime" column="dir_lastest_time" jdbcType="DATE"/>
+ 	 	 <result property="state.dirType" column="dir_type" jdbcType="CHAR"/>
+ 	</resultMap>
+ 	
+ 	<select id="selectChildrenPath" parameterType="java.lang.Integer" resultMap="zkPathMap">
+ 		select * from zk_path where fa_dir_id = #{id}
+ 	</select>
+ 	
+ 	<select id="selectZkPath" parameterType="java.lang.Integer" resultMap="zkPathMap">
+ 		select * from zk_path where dir_id = #{id}
+ 	</select>
+ 	
+ 	<select id="allZkPath" resultMap="zkPathMap">
+		select * from zk_path where dir_state = 'A' and fa_dir_id = 0 order by dir_id desc 
+	</select>
+	
+ 	<select id="selectZkPathById" resultMap="zkPathMap">
+ 	    select * from zk_path where dir_state = 'A' and dir_id in (#{id})
+ 	</select>
+ 	
+ 	<select id="selectParentZkPathById" resultMap="zkPathMap">
+ 	    select * from zk_path where dir_id = #{id} union
+		select * from zk_path where dir_id = (
+		select fa_dir_id from zk_path where dir_id = #{id});
+ 	</select>
+ 	
+ 	<select id="selectSinZkPath" resultMap="zkPathSinMap">
+ 		select * from zk_path where dir_state = 'A'
+		<if test="dirType != null"> AND dir_type = #{dirType} </if>
+		<if test="text != null"> AND dir_name = #{text}</if>
+		<if test="pid != null"> AND fa_dir_id = #{pid}</if>
+ 	</select>
+   
+	<!--新增属性  -->
+	<insert id="ADD_CONFIGURATION_MANAGER" parameterType="java.util.Map" keyProperty="id">
+		<selectKey resultType="int" keyProperty="id" order="BEFORE">
+        	<if test="_databaseId  == 'mysql'">SELECT nextval('SEQ_CFG_PROPERTIES');</if>
+			<if test="_databaseId  == 'oracle'">SELECT SEQ_CFG_PROPERTIES.NEXTVAL FROM DUAL</if>
+			<if test="_databaseId  == 'hsqldb'">SELECT NULL FROM zk_path WHERE dir_id = 1</if>
+		</selectKey>
+	  INSERT INTO CFG_PROPERTIES
+	  <trim prefix="(" suffix=")" suffixOverrides=",">
+	  		ID,
+	  		dir_id,
+		  	<if test="proKey != null">PRO_KEY,</if>
+		  	<if test="proDataType != null">PRO_DATA_TYPE,</if>
+		  	<if test="proValue != null">PRO_VALUE,</if>
+		  	<if test="proValueBuffer != null">PRO_VALUE_BUFFER,</if>
+		  	<if test="proType != null">PRO_TYPE,</if>
+		  	<if test="proEncrypt != null">PRO_ENCRYPT,</if>
+		  	<if test="moduleName != null">MODULE_NAME,</if>
+		  	<if test="groupName != null">GROUP_NAME,</if>
+		  	<if test="groupDesc != null">GROUP_DESC,</if>
+		  	<if test="effectZone != null">EFFECT_ZONE,</if>
+		  	<if test="createDt != null">CREATE_DT,</if>
+		  	<if test="modifyDt != null">MODIFY_DT,</if>
+		  	<if test="synStatus != null">SYN_STATUS,</if>
+		  	<if test="description != null">DESCRIPTION,</if>
+		  	<if test="proConstraint != null">PRO_CONSTRAINT,</if>
+	 </trim>
+	  <trim prefix=" values (" suffix=")" suffixOverrides="," >
+	  		 #{id},
+	  		 #{dirId},
+			<if test="proKey != null">#{proKey},</if>
+		  	<if test="proDataType != null">#{proDataType},</if>
+		  	<if test="proValue != null">#{proValue},</if>
+		  	<if test="proValueBuffer != null">#{proValueBuffer,typeHandler=BlobTypeHandler},</if>
+		  	<if test="proType != null">#{proType},</if>
+		  	<if test="proEncrypt != null">#{proEncrypt},</if>
+		  	<if test="moduleName != null">#{moduleName},</if>
+		  	<if test="groupName != null">#{groupName},</if>
+		  	<if test="groupDesc != null">#{groupDesc},</if>
+		  	<if test="effectZone != null">#{effectZone},</if>
+		  	<if test="createDt != null">#{createDt},</if>
+		  	<if test="modifyDt != null">#{modifyDt},</if>
+		  	<if test="synStatus != null">#{synStatus},</if>
+		  	<if test="description != null">#{description},</if>
+		  	<if test="proConstraint != null">#{proConstraint},</if>
+		</trim>
+	</insert>
+	
+	<!-- 属性实体对象 -->
+	<select id="allConf" resultMap="cfgPropertiesMap">
+		SELECT * FROM CFG_PROPERTIES order by pro_key,create_dt desc
+	</select>
+	
+	<select id="selectConfBykey" resultMap="cfgPropertiesMap">
+		SELECT * FROM CFG_PROPERTIES where pro_key = #{proKey} order by pro_key,create_dt desc
+	</select>
+	
+	<!-- 属性实体对象 -->
+	<select id="selectConf" resultMap="cfgPropertiesMap" parameterType="java.util.Map"  >
+		SELECT * FROM CFG_PROPERTIES WHERE 1=1 
+		<if test="proKey != null"> AND pro_key = #{proKey} </if>
+		<if test="proValue != null"> AND pro_value = #{proValue} </if>
+		<if test="proValueBuffer != null"> AND pro_value_buffer = #{proValueBuffer,typeHandler=BlobTypeHandler} </if>
+		<if test="dirId != null"> AND DIR_ID = #{dirId}</if>
+		 order by pro_key,create_dt desc
+	</select>
+	
+	<select id="selectConfByProKeyAndModuleNameAndEffectZone" resultMap="cfgPropertiesMap" parameterType="java.util.Map"  >
+		SELECT * FROM CFG_PROPERTIES WHERE 1=1 
+		<if test="dirId != null"> AND dir_id = #{dirId}</if> 
+		<if test="proKey != null"> AND pro_key = #{proKey}</if>
+	</select>
+	
+	<select id="selectConfById" resultMap="cfgPropertiesMap" parameterType="java.util.Map"  >
+		SELECT * FROM CFG_PROPERTIES WHERE 1=1 
+		<if test="id != null"> AND id in 
+		    <foreach item="item" index="index" collection="id" open="("  
+            separator="," close=")">
+		        #{item}  
+		    </foreach>
+		</if> 
+		order by pro_key,create_dt desc
+	</select>
+	  
+	<!--修改属性-->
+	<update id="UPDATE_CONFIGURATION_MANAGEMENT"  parameterType="java.util.Map">
+	 UPDATE CFG_PROPERTIES 
+	 	<trim prefix="set" prefixOverrides=",">
+	 		<if test="proKey != null"> ,PRO_KEY=#{proKey}</if>
+	 		<if test="proDataType != null"> ,PRO_DATA_TYPE=#{proDataType}</if>
+	 		<if test="proValue != null"> ,PRO_VALUE=#{proValue}</if>
+	 		<if test="proValueBuffer != null"> ,PRO_VALUE_BUFFER=#{proValueBuffer,typeHandler=BlobTypeHandler}</if>
+	 		<if test="proType != null"> ,PRO_TYPE=#{proType}</if>
+	 		<if test="proEncrypt != null"> ,PRO_ENCRYPT=#{proEncrypt}</if>
+	 		<if test="moduleName != null"> ,MODULE_NAME=#{moduleName}</if>
+	 		<if test="groupName != null"> ,GROUP_NAME=#{groupName}</if>
+	 		<if test="groupDesc != null"> ,GROUP_DESC=#{groupDesc}</if>
+	 		<if test="effectZone != null"> ,EFFECT_ZONE=#{effectZone}</if>
+<!-- 	 		<if test="createDt != null"> ,CREATE_DT=#{createDt}</if> -->
+	 		<if test="modifyDt != null"> ,MODIFY_DT=#{modifyDt}</if>
+	 		<if test="synStatus != null"> ,SYN_STATUS=#{synStatus}</if>
+	 		<if test="description != null"> ,description=#{description}</if>
+	 		<if test="proConstraint != null"> ,pro_constraint=#{proConstraint}</if>
+	 		<if test="dirId != null"> ,dir_id=#{dirId}</if>
+	 	</trim>
+		 WHERE ID = #{id}
+	</update>
+	
+	<update id="update_conf_properties" parameterType="com.asiainfo.integration.o2p.cfg.dto.CfgProperties">
+		UPDATE CFG_PROPERTIES 
+	 	<trim prefix="set" prefixOverrides=",">
+	 		<if test="key != null"> ,PRO_KEY=#{key}</if>
+	 		<if test="proDataType != null"> ,PRO_DATA_TYPE=#{proDataType}</if>
+	 		<if test="value != null"> ,PRO_VALUE=#{value}</if>
+	 		<if test="proValueBuffer != null"> ,PRO_VALUE_BUFFER=#{proValueBuffer, typeHandler=BlobTypeHandler}</if>
+	 		<if test="proType != null"> ,PRO_TYPE=#{proType}</if>
+	 		<if test="lock != null"> ,PRO_ENCRYPT=#{lock}</if>
+	 		<if test="moduleName != null"> ,MODULE_NAME=#{moduleName}</if>
+	 		<if test="group != null"> ,GROUP_NAME=#{group}</if>
+	 		<if test="groupDesc != null"> ,GROUP_DESC=#{groupDesc}</if>
+	 		<if test="effectZone != null"> ,EFFECT_ZONE=#{effectZone}</if>
+	 		<if test="modifyDt != null"> ,MODIFY_DT=#{modifyDt}</if>
+	 		<if test="synStatus != null"> ,SYN_STATUS=#{synStatus}</if>
+	 		<if test="description != null"> ,description=#{description}</if>
+	 		<if test="proConstraint != null"> ,pro_constraint=#{proConstraint}</if>
+	 		<if test="dirId != null"> ,dir_id=#{dirId}</if>
+	 	</trim>
+		 WHERE ID = #{id}
+	</update>
+	
+	<!--删除属性 -->
+	<update id="DELETE_CONFIGURATION_MANAGEMENT" parameterType="java.util.Map">
+		DELETE FROM CFG_PROPERTIES WHERE ID=#{id}
+	</update>
+	
+	<delete id="deleteZkpathById" parameterType="java.lang.Integer">
+		delete from zk_path where dir_id = #{id}
+	</delete>
+	
+	<delete id="deleteConfByZkpathId" parameterType="java.lang.Integer">
+		delete from CFG_PROPERTIES where dir_id = #{id}
+	</delete>
+	
+	<update id="deleteConfById" parameterType="java.util.Map">
+		DELETE FROM CFG_PROPERTIES WHERE ID in 
+		<foreach item="item" index="index" collection="id" open="("  
+            separator="," close=")">
+		        #{item}  
+		</foreach>
+	</update>
+	
+	<insert id="createZkPath" parameterType="com.asiainfo.integration.o2p.cfg.dto.ZkPath">
+		<selectKey resultType="int" keyProperty="id" order="BEFORE">
+        	<if test="_databaseId  == 'mysql'">SELECT nextval('SEQ_ZK_PATH');</if>
+			<if test="_databaseId  == 'oracle'">SELECT SEQ_ZK_PATH.NEXTVAL FROM DUAL</if>
+			<if test="_databaseId  == 'hsqldb'">SELECT NULL FROM zk_path WHERE dir_id = 1</if>
+		</selectKey>
+		insert into zk_path(dir_id, fa_dir_id, dir_name, dir_type, dir_create_time, dir_state, dir_lastest_time)
+		values(#{id}, #{pId}, #{text}, #{dirType}, #{dirCreateTime}, 'A', #{dirLastestTime})
+	</insert>
+	
+	<update id="updateZkPath" parameterType="com.asiainfo.integration.o2p.cfg.dto.ZkPath">
+		update zk_path set dir_name = #{text}, dir_type = #{dirType}, dir_lastest_time = #{dirLastestTime} where dir_id = #{id}
+	</update>
+	
+	<select id="checkKeyExistBySrcId" parameterType="java.util.Map" resultType="java.util.Map">
+		select pro_key,id from CFG_PROPERTIES cp where id in 
+		<foreach collection="ids" index="index" item="item" open="(" separator="," close=")">  
+            #{item}   
+    	</foreach>
+		and exists (
+			select 1 from CFG_PROPERTIES cp1 where cp1.pro_key = cp.pro_key and dir_id = #{namespaceId}
+		)
+	</select>
+	
+</mapper>
